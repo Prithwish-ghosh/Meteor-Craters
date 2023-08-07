@@ -82,3 +82,6 @@ watson.test(dataset_imp$Impact_dataset.LAT...9 , alpha = 0.05 , dist = "vonmises
 plot(density.circular(dataset_imp$Impact_dataset.LON...13 , bw = 50))
 plot(density.circular(dataset_imp$Impact_dataset.LAT...9 , bw = 50))
 
+
+watson.two.test(dataset_imp$Impact_dataset.LON...13 , dataset_imp$Impact_dataset.LAT...9 , alpha = 0.05)
+watson.two.test(completed_data$fireball.Latitude , completed_data$fireball.long , alpha = 0.05)
