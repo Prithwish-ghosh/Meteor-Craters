@@ -197,8 +197,8 @@ pp = function (x,col,col1, ref.line = TRUE )
   data.frame(mu, kappa)
 }
 
-pp(completed_data$fireball.Longitude , col = "blue", col1 = "green" , ref.line = TRUE)
-pp(completed_data$fireball.Latitude , col = "blue", col1 = "green" , ref.line = TRUE)
+pp(completed_data$fireball.Longitude , col = "red" , col1 = "blue" , ref.line = TRUE)
+pp(completed_data$fireball.Latitude , col = "red" , col1 = "blue", ref.line = TRUE)
 
 ppunif = function (x, ref.line = TRUE, frac = NULL, xlab = "Uniform Distribution", 
                    ylab = "Empirical Distribution", col = NULL, col.inf = NULL, 
@@ -249,8 +249,8 @@ ppunif = function (x, ref.line = TRUE, frac = NULL, xlab = "Uniform Distribution
   }
 }
 
-ppunif(completed_data$fireball.Longitude , col = "blue", col1 = "green")
-ppunif(completed_data$fireball.Latitude , col = "blue", col1 = "green")
+ppunif(completed_data$fireball.Longitude , col = "red" , col1 = "blue")
+ppunif(completed_data$fireball.Latitude , col = "red" , col1 = "blue")
 
 pp(dataset_imp$Impact_dataset.LON...13 , col = "red" , col1 = "blue")
 pp(dataset_imp$Impact_dataset.LAT...9, col = "red", col1 = "blue")
