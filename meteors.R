@@ -49,6 +49,16 @@ sum(is.na(fireball$fireball.Latitude))
 sum(is.na(fireball$fireball.Longitude))
 dim(fireball)
 
+fire = cbind(fireball$fireball.Latitude , fireball$fireball.Longitude)
+set.seed(2022)
+EvMFs <- 
+  function(K){
+    movMF(fire, k = K, control= list(nruns = 20))
+  }
+
+Esd = lapply(1:10, EvMFs)
+gt = sapply(Esd, BIC)
+gt
 
 #View(fireball)
 final_data = fireball
@@ -91,6 +101,17 @@ plot(density.circular(completed_data$fireball.Latitude , bw = 50) , pch = 19)
 
 Impact_dataset = read_csv("Impact.csv")
 Impact_dataset = data.frame(Impact_dataset)
+
+cra = cbind(dataset_imp$Impact_dataset.LAT...9 , dataset_imp$Impact_dataset.LON...13)
+set.seed(2023)
+vMFs <- 
+  function(K){
+    movMF(cra, k = K, control= list(nruns = 20))
+  }
+
+sd = lapply(1:10, vMFs)
+gtr = sapply(sd, BIC)
+gtr
 
 #library(Directional)
 head(Impact_dataset)
