@@ -21,12 +21,28 @@ library(ggplot2)
 library(skmeans)
 library(NPCirc)
 library(rgl)
+library(colorspace)
 library(mclust)
 library(maps)
 library(maptools)
 #  Meteor lalnding(1) dataset 
 
 library(readr)
+
+lat_lon_to_xyz <- function(lat, lon, radius = 1) {
+  lat_rad <- lat * pi / 180  # Convert latitude to radians
+  lon_rad <- lon * pi / 180  # Convert longitude to radians
+  
+  x <- radius * cos(lat_rad) * cos(lon_rad)
+  y <- radius * cos(lat_rad) * sin(lon_rad)
+  z <- radius * sin(lat_rad)
+  
+  return(cbind(x, y, z))
+}
+
+########################################## Fire Ball Dataset #######################################################
+
+
 
 cneos_fireball_data_final <- read_csv("cneos_fireball_data (2).csv")
 fireball = data.frame(cneos_fireball_data_final)
@@ -64,6 +80,75 @@ gt
 final_data = fireball
 dim(final_data)
 tail(final_data)
+
+latitude <- fireball$fireball.Latitude
+longitude <- fireball$fireball.Longitude
+
+xyz_cord = lat_lon_to_xyz(latitude, longitude)
+xyz_cord
+
+fishkent(xyz_cord)
+
+dat <- setDT(data.frame(xyz_cord)); colnames(xyz_cord) <- c("x", "y", "z")
+dat
+
+plot(dat,
+     xlim = c(-1, 1),
+     ylim = c(-1, 1),
+     asp = 1)
+
+dat[, long := atan2(y, x) * (180 / pi) + 180][, lat := acos(z) * (180 / pi)]
+dens <- vmf.kerncontour(dat[, .(lat, long)], ngrid = 300, full = TRUE, thumb = "rot", den.ret = TRUE)
+head(dat)
+with(dens, {
+  image(x = long, y = lat, z = den,
+        main = "Spherical Density Estimate",
+        xlab = "Longitude",
+        ylab = "Latitude")
+  
+  # Add points
+  points(
+    x = dat$long,
+    y = dat$lat,
+    col = "blue",
+    pch = 1,  bg = "gold" , cex = 0.5
+  )
+})
+
+
+points(z = dens$long , y = dens$lat , color = "blue")
+pdat <- data.table(d = c(dens$den),
+                   lat = rep(dens$lat, each = 300) - 90,
+                   long = rep(dens$long, 300) - 180)
+
+pdat
+ggplot(pdat, aes(x = long, y = lat, color = d)) +
+  geom_point() +
+  geom_map(
+    data = world_coordinates,map = world_coordinates,
+    aes(long, lat , map_id = region),
+    color = "orange" , fill = NA
+  ) +
+  geom_point(data = fireball,
+             aes(x = fireball$fireball.Longitude, y = fireball$fireball.Latitude , fill = "blue"),
+             color = "blue", size = 1.5, shape = 1 , alpha = 12) + 
+  scale_color_continuous_sequential(palette = "YlOrRd") +
+  coord_map("orthographic", orientation = c(20, 0, 0)) +
+  scale_x_continuous(breaks = seq(-180, 180, 20)) +
+  scale_y_continuous(breaks = seq(-90, 90, 45)) +
+  ggtitle("Orthographic Projection of Spherical Density", "Top / Front View") +
+  xlab("") +
+  ylab("") +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        panel.ontop = TRUE,
+        legend.position = "none",
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        panel.grid = element_line(color = "red" ),
+        panel.background = element_rect(fill = NA))
+
+
 watson.test(fireball$fireball.Latitude , alpha = 0.05 , dist = "vonmises")
 watson.test(fireball$fireball.Longitude , alpha = 0.05 , dist = "vonmises")
 rao.spacing.test(fireball$fireball.Longitude , alpha = 0.05)
@@ -99,6 +184,14 @@ watson.test(completed_data$fireball.Latitude , alpha = 0.05 , dist = "vonmises")
 plot(density.circular(completed_data$fireball.long , bw = 50) , pch = 19)
 plot(density.circular(completed_data$fireball.Latitude , bw = 50) , pch = 19)
 
+
+
+
+############################################### Impact Crater Dataset ####################################################
+
+
+
+
 Impact_dataset = read_csv("Impact.csv")
 Impact_dataset = data.frame(Impact_dataset)
 
@@ -119,6 +212,73 @@ dataset_imp = data.frame(Impact_dataset$Name , Impact_dataset$Location , Impact_
                          Impact_dataset$Diameter, Impact_dataset$Age , Impact_dataset$Coordinates, 
                          Impact_dataset$LAT...9 , Impact_dataset$LON...13)
 dataset_imp = na.omit(dataset_imp)
+
+latitude <- dataset_imp$Impact_dataset.LAT...9
+longitude <- dataset_imp$Impact_dataset.LON...13
+
+xyz_coordinates <- lat_lon_to_xyz(latitude, longitude)
+xyz_coordinates
+
+fishkent(xyz_coordinates)
+
+dat <- setDT(data.frame(xyz_coordinates)); colnames(xyz_coordinates) <- c("x", "y", "z")
+
+
+plot(dat,
+     xlim = c(-1, 1),
+     ylim = c(-1, 1),
+     asp = 1)
+
+dat[, long := atan2(y, x) * (180 / pi) + 180][, lat := acos(z) * (180 / pi)]
+dens <- vmf.kerncontour(dat[, .(lat, long)], ngrid = 300, full = TRUE, thumb = "rot", den.ret = TRUE)
+head(dat)
+with(dens, {
+  image(x = long, y = lat, z = den,
+        main = "Spherical Density Estimate",
+        xlab = "Longitude",
+        ylab = "Latitude")
+  
+  # Add points
+  points(
+    x = dat$long,
+    y = dat$lat,
+    col = "blue",
+    pch = 0.5,  bg = "gold" , cex = 0.4
+  )
+})
+
+
+#points(z = dens$long , y = dens$lat , color = "blue")
+pdat <- data.table(d = c(dens$den),
+                   lat = rep(dens$lat, each = 300) - 90,
+                   long = rep(dens$long, 300) - 180)
+
+pdat
+ggplot(pdat, aes(x = long, y = lat, color = d)) +
+  geom_point() +
+  geom_map(
+    data = world_coordinates,map = world_coordinates,
+    aes(long, lat , map_id = region),
+    color = "orange" , fill = NA
+  ) +
+  geom_point(data = dataset_imp,
+             aes(x = dataset_imp$Impact_dataset.LON...13,  y = dataset_imp$Impact_dataset.LAT...9 , fill = "blue"),
+             color = "blue", size = 1.5, shape = 1 , alpha = 12) + 
+  scale_color_continuous_sequential(palette = "YlOrRd") +
+  coord_map("orthographic", orientation = c(20, 0, 0)) +
+  scale_x_continuous(breaks = seq(-180, 180, 20)) +
+  scale_y_continuous(breaks = seq(-90, 90, 45)) +
+  ggtitle("Orthographic Projection of Spherical Density", "Top / Front View") +
+  xlab("") +
+  ylab("") +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        panel.ontop = TRUE,
+        legend.position = "none",
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        panel.grid = element_line(color = "red" ),
+        panel.background = element_rect(fill = NA))
 
 world_coordinates = map_data("world")
 ggplot() +
@@ -278,3 +438,167 @@ pp(dataset_imp$Impact_dataset.LAT...9, col = "red", col1 = "blue")
 
 ppunif(dataset_imp$Impact_dataset.LON...13 , col = "red" , col1 = "blue")
 ppunif(dataset_imp$Impact_dataset.LAT...9 , col = "red" , col1 = "blue")
+
+
+
+############################################### Meteor Landing Dataset ###################################################
+
+
+
+dataset_landing = read_csv("meteorite-landings.csv")
+dataset_landing = data.frame(dataset_landing)
+dataset_landing = na.omit(dataset_landing)
+library(maps)
+library(ggplot2)
+world_coordinates = map_data("world")
+ggplot() +
+  geom_map(
+    data = world_coordinates,map = world_coordinates,
+    aes(long, lat , map_id = region),
+    color = "black" , fill = "lightyellow"
+  ) +
+  geom_point(
+    data = dataset_landing ,
+    aes(dataset_landing$reclong , dataset_landing$reclat , color = "red",),
+    alpha = 0.4
+  ) +
+  theme(legend.position = "top")
+
+library(circular)
+watson.test(dataset_landing$reclong , alpha = 0.01 , dist = "vonmises")
+watson.test(dataset_landing$reclat , alpha = 0.01 , dist = "vonmises")
+watson.test(dataset_landing$reclong , alpha = 0.01 , dist = "uniform")
+watson.test(dataset_landing$reclat , alpha = 0.01 , dist = "uniform")
+watson.two(dataset_landing$reclong , dataset_landing$reclat , alpha = 0.01 , plot = TRUE)
+
+dataset_landing = na.omit(dataset_landing)
+library(movMF)
+library(CircStats)
+
+x= dataset_landing$reclong
+y <- rvonmises(n=1000, mu=mean(dataset_landing$reclong), kappa=est.kappa(dataset_landing$reclong))
+resx <- density(x, bw=25)
+resy <- density(y, bw=25)
+pp=plot(density.circular(dataset_landing$reclong , bw = 30) ,points.plot=F, pty = 10, lty=1, lwd=2, col="blue",xlim=c(-1.2,1.5), ylim=c(-1.3, 1.5), main="Comparison of  estimated sample density\n with fitted Von Mises\n for Meteor Landing.Longitude data", cex.main=0.25)
+lines(resy, points.plot=F, col="red", points.col=2,lwd=2, lty=4, plot.info=pp)
+
+legend("topleft", legend=c("estimated  \n kernel density", "von mises density"),
+       col=c("blue", "red"), lty=c(1,4),lwd=c(2,2), cex=0.59,
+       box.lty=0)
+
+x= dataset_landing$reclat
+y <- rvonmises(n=1000, mu=mean(dataset_landing$reclat), kappa=est.kappa(dataset_landing$reclat))
+resx <- density(x, bw=25)
+resy <- density(y, bw=25)
+pp=plot(density.circular(dataset_landing$reclat , bw = 30) ,points.plot=F, pty = 10, lty=1, lwd=2, col="blue",xlim=c(-1.2,1.5), ylim=c(-1.3, 1.5), main="Comparison of  estimated sample density\n with fitted Von Mises\n for Meteor Landing.Latitude data", cex.main=0.25)
+lines(resy, points.plot=F, col="red", points.col=2,lwd=2, lty=4, plot.info=pp)
+
+legend("topleft", legend=c("estimated  \n kernel density", "von mises density"),
+       col=c("blue", "red"), lty=c(1,4),lwd=c(2,2), cex=0.59,
+       box.lty=0)
+ppunif(dataset_landing$reclong , col = "red" , col1 = "blue" , ref.line = TRUE)
+ppunif(dataset_landing$reclat , col = "red" , col1 = "blue" , ref.line = TRUE)
+
+pp(dataset_landing$reclong , col = "red" , col1 = "blue" , ref.line = TRUE)
+pp(dataset_landing$reclat , col = "red" , col1 = "blue" , ref.line = TRUE)
+
+ataset_landing = na.omit(dataset_landing)
+lq = cbind(circular(dataset_landing$reclat) , circular(dataset_landing$reclong))
+lq
+sum(is.na(lan))
+sum(is.null(lan))
+sum(is.finite(lq))
+dim(lq)
+
+set.seed(2023)
+
+rows_with_zeros <- apply(lq, 1, function(row) any(row == 0))
+sum(rows_with_zeros)
+dim(lq)
+mat_no_zeros <- lq[!rows_with_zeros, ]
+
+# Print the resulting matrix
+print(mat_no_zeros)
+
+vMFs_Landing <- 
+  function(K){
+    movMF(na.omit(mat_no_zeros), k = K, control= list(nruns = 20))
+  }
+sdl = lapply(1:20, vMFs_Landing)
+sdl
+sapply(sdl, BIC)
+
+latitude <- dataset_landing$reclat
+longitude <- dataset_landing$reclong
+
+# Convert latitude and longitude to x, y, z coordinates
+xyz_coordinates <- lat_lon_to_xyz(latitude, longitude)
+
+# Print the x, y, z coordinates
+print(xyz_coordinates)
+
+fis_k = fishkent(xyz_coordinates )
+fis_k
+
+at <- setDT(data.frame(xyz_coordinates)); colnames(xyz_coordinates) <- c("x", "y", "z")
+
+
+plot(dat,
+     xlim = c(-1, 1),
+     ylim = c(-1, 1),
+     asp = 1)
+
+dat[, long := atan2(y, x) * (180 / pi) + 180][, lat := acos(z) * (180 / pi)]
+dens <- vmf.kerncontour(dat[, .(lat, long)], ngrid = 300, full = TRUE, thumb = "rot", den.ret = TRUE)
+head(dat)
+with(dens, {
+  image(x = long, y = lat, z = den,
+        main = "Spherical Density Estimate",
+        xlab = "Longitude",
+        ylab = "Latitude")
+  
+  # Add points
+  points(
+    x = dat$long,
+    y = dat$lat,
+    col = "blue",
+    pch = 0.5,  bg = "gold" , cex = 0.4
+  )
+})
+
+
+#points(z = dens$long , y = dens$lat , color = "blue")
+pdat <- data.table(d = c(dens$den),
+                   lat = rep(dens$lat, each = 300) - 90,
+                   long = rep(dens$long, 300) - 180)
+
+pdat
+ggplot(pdat, aes(x = long, y = lat, color = d)) +
+  geom_point() +
+  geom_map(
+    data = world_coordinates,map = world_coordinates,
+    aes(long, lat , map_id = region),
+    color = "orange" , fill = NA
+  ) +
+  geom_point(data = dataset_landing,
+             aes(x = dataset_landing$reclong,  y = dataset_landing$reclat , fill = "blue"),
+             color = "blue", size = 1.5, shape = 1 , alpha = 12) + 
+  scale_color_continuous_sequential(palette = "YlOrRd") +
+  coord_map("orthographic", orientation = c(20, 0, 0)) +
+  scale_x_continuous(breaks = seq(-180, 180, 20)) +
+  scale_y_continuous(breaks = seq(-90, 90, 45)) +
+  ggtitle("Orthographic Projection of Spherical Density", "Top / Front View") +
+  xlab("") +
+  ylab("") +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        panel.ontop = TRUE,
+        legend.position = "none",
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        panel.grid = element_line(color = "red" ),
+        panel.background = element_rect(fill = NA))
+
+
+
+                         
