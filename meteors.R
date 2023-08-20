@@ -19,6 +19,10 @@ library(Matrix)
 library(mixtools)
 library(ggplot2)
 library(skmeans)
+library(hrbrthemes)  # hrbrmstr themes
+library(magick)      # For animation
+library(mapproj)     # Needed for projection
+theme_set(theme_ipsum())
 library(NPCirc)
 library(rgl)
 library(colorspace)
@@ -537,63 +541,68 @@ sdl = lapply(1:20, vMFs_Landing)
 sdl
 sapply(sdl, BIC)
 
-latitude <- dataset_landing$reclat
-longitude <- dataset_landing$reclong
-
-# Convert latitude and longitude to x, y, z coordinates
-xyz_coordinates <- lat_lon_to_xyz(latitude, longitude)
-
-# Print the x, y, z coordinates
-print(xyz_coordinates)
-
-fis_k = fishkent(xyz_coordinates )
-fis_k
-
-at <- setDT(data.frame(xyz_coordinates)); colnames(xyz_coordinates) <- c("x", "y", "z")
+dataset_landing <- lq[!rows_with_zeros, ]
+dataset_landing = as.matrix(dataset_landing) 
+dataset_landing
 
 
-plot(dat,
-     xlim = c(-1, 1),
-     ylim = c(-1, 1),
-     asp = 1)
+num_samples <- 15000
 
-dat[, long := atan2(y, x) * (180 / pi) + 180][, lat := acos(z) * (180 / pi)]
-dens <- vmf.kerncontour(dat[, .(lat, long)], ngrid = 300, full = TRUE, thumb = "rot", den.ret = TRUE)
-head(dat)
-with(dens, {
-  image(x = long, y = lat, z = den,
-        main = "Spherical Density Estimate",
-        xlab = "Longitude",
-        ylab = "Latitude")
-  
-  # Add points
-  points(
-    x = dat$long,
-    y = dat$lat,
-    col = "blue",
-    pch = 0.5,  bg = "gold" , cex = 0.4
-  )
-})
+# Randomly sample rows from the matrix
+sampled_rows <- sample(1:nrow(dataset_landing), size = num_samples, replace = FALSE)
+
+# Extract the sampled rows
+Landing <- dataset_landing[sampled_rows, ]
+dim(Landing)
+Landing.dens = vmf_density_grid(Landing , ngrid = 300)
+
+Landing = data.frame(Landing)
+
+world <- map_data("world")
 
 
-#points(z = dens$long , y = dens$lat , color = "blue")
-pdat <- data.table(d = c(dens$den),
-                   lat = rep(dens$lat, each = 300) - 90,
-                   long = rep(dens$long, 300) - 180)
+                         
+g.am_landing <- ggplot() +
+  geom_map(data = world, map = world,
+           mapping = aes(map_id = region),
+           color = "grey90", fill = "grey90") +
+  geom_point(data = Landing,
+             mapping = aes(x = dataset_landing.reclong, y = dataset_landing.reclat),
+             color = "red", alpha = .5, size = 1, stroke = 0.1) +
+  geom_density_2d(data = G_Asian_data,
+                  aes(x = dataset_landing.reclong, y = dataset_landing.reclat),
+                  color = "#b266ff", alpha = 2) +
+  geom_contour(data = south_a.dens, aes(x=Long, y=Lat, z=Density),
+               color = "blue") +
+  geom_density_2d(data = Landing , aes(x = dataset_landing.reclong, y = dataset_landing.reclat),
+                  color = "darkgreen")+
+  geom_contour(data = Landing.dens , aes(x=Long, y=Lat, z=Density),
+               color = "deeppink4")+
+  coord_map("mercator")
 
-pdat
-ggplot(pdat, aes(x = long, y = lat, color = d)) +
-  geom_point() +
-  geom_map(
-    data = world_coordinates,map = world_coordinates,
-    aes(long, lat , map_id = region),
-    color = "orange" , fill = NA
-  ) +
-  geom_point(data = dataset_landing,
-             aes(x = dataset_landing$reclong,  y = dataset_landing$reclat , fill = "blue"),
-             color = "blue", size = 1.5, shape = 1 , alpha = 12) + 
-  scale_color_continuous_sequential(palette = "YlOrRd") +
-  coord_map("orthographic", orientation = c(20, 0, 0)) +
+g.am_landing
+
+
+                         
+
+                         
+g.am_landing <- ggplot() +
+  geom_map(data = world, map = world,
+           mapping = aes(map_id = region),
+           color = "grey90", fill = "grey90") +
+  geom_point(data = Landing,
+             mapping = aes(x = dataset_landing.reclong, y = dataset_landing.reclat),
+             color = "red", alpha = .5, size = 1, stroke = 0.1) +
+  geom_density_2d(data = G_Asian_data,
+                  aes(x = dataset_landing.reclong, y = dataset_landing.reclat),
+                  color = "#b266ff", alpha = 2) +
+  geom_contour(data = south_a.dens, aes(x=Long, y=Lat, z=Density),
+               color = "blue") +
+  geom_density_2d(data = Landing , aes(x = dataset_landing.reclong, y = dataset_landing.reclat),
+                  color = "darkgreen")+
+  geom_contour(data = Landing.dens , aes(x=Long, y=Lat, z=Density),
+               color = "deeppink4")+
+  coord_map("orthographic", orientation = c(-10, 0, 0)) +
   scale_x_continuous(breaks = seq(-180, 180, 20)) +
   scale_y_continuous(breaks = seq(-90, 90, 45)) +
   ggtitle("Orthographic Projection of Spherical Density", "Top / Front View") +
@@ -605,9 +614,9 @@ ggplot(pdat, aes(x = long, y = lat, color = d)) +
         legend.position = "none",
         plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5),
-        panel.grid = element_line(color = "red" ),
+        panel.grid = element_line(color = "black" ),
         panel.background = element_rect(fill = NA))
 
-
+g.am_landing
 
                          
