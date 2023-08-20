@@ -582,9 +582,6 @@ g.am_landing <- ggplot() +
 
 g.am_landing
 
-
-                         
-
                          
 g.am_landing <- ggplot() +
   geom_map(data = world, map = world,
