@@ -40,6 +40,21 @@ lat_lon_to_xyz <- function(lat, lon, radius = 1) {
   return(cbind(x, y, z))
 }
 
+vmf_density_grid = 
+function(u, ngrid = 100) {
+  # Translate to (0,180) and (0,360)
+  u[,1] <- u[,1] + 90
+  u[,2] <- u[,2] + 180
+  res <- vmf.kerncontour(u, thumb = "none", den.ret = T, full = T,
+                         ngrid = ngrid)
+  
+  # Translate back to (-90, 90) and (-180, 180) and create a grid of
+  # coordinates
+  ret <- expand.grid(Lat = res$lat - 90, Long = res$long - 180)
+  ret$Density <- c(res$den)
+  ret
+}
+
 ########################################## Fire Ball Dataset #######################################################
 
 
@@ -89,51 +104,44 @@ xyz_cord
 
 fishkent(xyz_cord)
 
-dat <- setDT(data.frame(xyz_cord)); colnames(xyz_cord) <- c("x", "y", "z")
-dat
+fireball.densities <- vmf_density_grid(fireball[,c("fireball.Latitude",
+                                                   "fireball.Longitude")],
+                                       ngrid = 300);
 
-plot(dat,
-     xlim = c(-1, 1),
-     ylim = c(-1, 1),
-     asp = 1)
-
-dat[, long := atan2(y, x) * (180 / pi) + 180][, lat := acos(z) * (180 / pi)]
-dens <- vmf.kerncontour(dat[, .(lat, long)], ngrid = 300, full = TRUE, thumb = "rot", den.ret = TRUE)
-head(dat)
-with(dens, {
-  image(x = long, y = lat, z = den,
-        main = "Spherical Density Estimate",
-        xlab = "Longitude",
-        ylab = "Latitude")
-  
-  # Add points
-  points(
-    x = dat$long,
-    y = dat$lat,
-    col = "blue",
-    pch = 1,  bg = "gold" , cex = 0.5
-  )
-})
-
-
-points(z = dens$long , y = dens$lat , color = "blue")
-pdat <- data.table(d = c(dens$den),
-                   lat = rep(dens$lat, each = 300) - 90,
-                   long = rep(dens$long, 300) - 180)
-
-pdat
-ggplot(pdat, aes(x = long, y = lat, color = d)) +
-  geom_point() +
-  geom_map(
-    data = world_coordinates,map = world_coordinates,
-    aes(long, lat , map_id = region),
-    color = "orange" , fill = NA
-  ) +
+world <- map_data("world")
+g.fireball <- ggplot() +
+  geom_map(data = world, map = world,
+           mapping = aes(map_id = region),
+           color = "grey90", fill = "grey80") +
   geom_point(data = fireball,
-             aes(x = fireball$fireball.Longitude, y = fireball$fireball.Latitude , fill = "blue"),
-             color = "blue", size = 1.5, shape = 1 , alpha = 12) + 
-  scale_color_continuous_sequential(palette = "YlOrRd") +
-  coord_map("orthographic", orientation = c(20, 0, 0)) +
+             mapping = aes(x = fireball.Longitude, y = fireball.Latitude),
+             color = "red", alpha = .5, size = .5, stroke = 0.1) +
+  geom_density_2d(data = fireball,
+                  aes(x = fireball.Longitude, y = fireball.Latitude),
+                  color = plot.colors[2], alpha = 1) +
+  geom_contour(data = fireball.densities, aes(x=Long, y=Lat, z=Density),
+               color = plot.colors[4]) +
+  scale_y_continuous(breaks = (-2:2) * 30, limits = c(-90, 90)) +
+  scale_x_continuous(breaks = (-4:4) * 45, limits = c(-180, 180)) +
+  coord_map("mercator")
+
+g.fireball
+
+g.fireball <- ggplot() +
+  geom_map(data = world, map = world,
+           mapping = aes(map_id = region),
+           color = "grey90", fill = "grey80") +
+  geom_point(data = fireball,
+             mapping = aes(x = fireball.Longitude, y = fireball.Latitude),
+             color = "red", alpha = .5, size = .5, stroke = 0.1) +
+  geom_density_2d(data = fireball,
+                  aes(x = fireball.Longitude, y = fireball.Latitude),
+                  color = plot.colors[2], alpha = 1) +
+  geom_contour(data = fireball.densities, aes(x=Long, y=Lat, z=Density),
+               color = plot.colors[4]) +
+  scale_y_continuous(breaks = (-2:2) * 30, limits = c(-90, 90)) +
+  scale_x_continuous(breaks = (-4:4) * 45, limits = c(-180, 180)) +
+  coord_map("orthographic", orientation = c(-10, 0, 0)) +
   scale_x_continuous(breaks = seq(-180, 180, 20)) +
   scale_y_continuous(breaks = seq(-90, 90, 45)) +
   ggtitle("Orthographic Projection of Spherical Density", "Top / Front View") +
@@ -145,8 +153,9 @@ ggplot(pdat, aes(x = long, y = lat, color = d)) +
         legend.position = "none",
         plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5),
-        panel.grid = element_line(color = "red" ),
+        panel.grid = element_line(color = "black" ),
         panel.background = element_rect(fill = NA))
+g.fireball
 
 
 watson.test(fireball$fireball.Latitude , alpha = 0.05 , dist = "vonmises")
