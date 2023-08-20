@@ -122,9 +122,9 @@ g.fireball <- ggplot() +
              color = "red", alpha = .5, size = .5, stroke = 0.1) +
   geom_density_2d(data = fireball,
                   aes(x = fireball.Longitude, y = fireball.Latitude),
-                  color = plot.colors[2], alpha = 1) +
+                  color = "#B266FF", alpha = 1) +
   geom_contour(data = fireball.densities, aes(x=Long, y=Lat, z=Density),
-               color = plot.colors[4]) +
+               color = "blue") +
   scale_y_continuous(breaks = (-2:2) * 30, limits = c(-90, 90)) +
   scale_x_continuous(breaks = (-4:4) * 45, limits = c(-180, 180)) +
   coord_map("mercator")
@@ -140,9 +140,9 @@ g.fireball <- ggplot() +
              color = "red", alpha = .5, size = .5, stroke = 0.1) +
   geom_density_2d(data = fireball,
                   aes(x = fireball.Longitude, y = fireball.Latitude),
-                  color = plot.colors[2], alpha = 1) +
+                  color = "#B266FF", alpha = 1) +
   geom_contour(data = fireball.densities, aes(x=Long, y=Lat, z=Density),
-               color = plot.colors[4]) +
+               color = "blue") +
   scale_y_continuous(breaks = (-2:2) * 30, limits = c(-90, 90)) +
   scale_x_continuous(breaks = (-4:4) * 45, limits = c(-180, 180)) +
   coord_map("orthographic", orientation = c(-10, 0, 0)) +
@@ -226,72 +226,58 @@ dataset_imp = data.frame(Impact_dataset$Name , Impact_dataset$Location , Impact_
                          Impact_dataset$LAT...9 , Impact_dataset$LON...13)
 dataset_imp = na.omit(dataset_imp)
 
-latitude <- dataset_imp$Impact_dataset.LAT...9
-longitude <- dataset_imp$Impact_dataset.LON...13
+Crater = dataset_imp[, c(7 , 8)]
 
-xyz_coordinates <- lat_lon_to_xyz(latitude, longitude)
-xyz_coordinates
+Crater.Density = vmf_density_grid(Crater, ngrid = 300)
 
-fishkent(xyz_coordinates)
+g.Crater <- ggplot() +
+  geom_map(data = world, map = world,
+           mapping = aes(map_id = region),
+           color = "grey90", fill = "grey80") +
+  geom_point(data = Crater,
+             mapping = aes(x = Crater[,1], y = Crater[,2]),
+             color = "red", alpha = .5, size = .5, stroke = 0.1) +
+  geom_density_2d(data = Crater,
+                  aes(x = Crater[,1], y = Crater[,2]),
+                  color = "#B266FF", alpha = 1) +
+  geom_contour(data = Crater.Density, aes(x=Long, y=Lat, z=Density),
+               color = "blue") +
+  scale_y_continuous(breaks = (-2:2) * 30, limits = c(-90, 90)) +
+  scale_x_continuous(breaks = (-4:4) * 45, limits = c(-180, 180)) +
+  coord_map("mercator")
 
-dat <- setDT(data.frame(xyz_coordinates)); colnames(xyz_coordinates) <- c("x", "y", "z")
+g.Crater
 
-
-plot(dat,
-     xlim = c(-1, 1),
-     ylim = c(-1, 1),
-     asp = 1)
-
-dat[, long := atan2(y, x) * (180 / pi) + 180][, lat := acos(z) * (180 / pi)]
-dens <- vmf.kerncontour(dat[, .(lat, long)], ngrid = 300, full = TRUE, thumb = "rot", den.ret = TRUE)
-head(dat)
-with(dens, {
-  image(x = long, y = lat, z = den,
-        main = "Spherical Density Estimate",
-        xlab = "Longitude",
-        ylab = "Latitude")
-  
-  # Add points
-  points(
-    x = dat$long,
-    y = dat$lat,
-    col = "blue",
-    pch = 0.5,  bg = "gold" , cex = 0.4
-  )
-})
-
-
-#points(z = dens$long , y = dens$lat , color = "blue")
-pdat <- data.table(d = c(dens$den),
-                   lat = rep(dens$lat, each = 300) - 90,
-                   long = rep(dens$long, 300) - 180)
-
-pdat
-ggplot(pdat, aes(x = long, y = lat, color = d)) +
-  geom_point() +
-  geom_map(
-    data = world_coordinates,map = world_coordinates,
-    aes(long, lat , map_id = region),
-    color = "orange" , fill = NA
-  ) +
-  geom_point(data = dataset_imp,
-             aes(x = dataset_imp$Impact_dataset.LON...13,  y = dataset_imp$Impact_dataset.LAT...9 , fill = "blue"),
-             color = "blue", size = 1.5, shape = 1 , alpha = 12) + 
-  scale_color_continuous_sequential(palette = "YlOrRd") +
-  coord_map("orthographic", orientation = c(20, 0, 0)) +
-  scale_x_continuous(breaks = seq(-180, 180, 20)) +
-  scale_y_continuous(breaks = seq(-90, 90, 45)) +
+g.Crater <- ggplot() +
+  geom_map(data = world, map = world,
+           mapping = aes(map_id = region),
+           color = "grey90", fill = "grey80") +
+  geom_point(data = Crater,
+             mapping = aes(x = Crater[,1], y = Crater[,2]),
+             color = "red", alpha = .5, size = .5, stroke = 0.1) +
+  geom_density_2d(data = Crater,
+                  aes(x = Crater[,1], y = Crater[,2]),
+                  color = "#B266FF", alpha = 1) +
+  geom_contour(data = Crater.Density, aes(x=Long, y=Lat, z=Density),
+               color = "blue") +
+  scale_y_continuous(breaks = (-2:2) * 30, limits = c(-90, 90)) +
+  scale_x_continuous(breaks = (-4:4) * 45, limits = c(-180, 180)) +
+  #coord_map("mercator")+
+  coord_map("orthographic", orientation = c(-20, 60, 0)) +
   ggtitle("Orthographic Projection of Spherical Density", "Top / Front View") +
   xlab("") +
   ylab("") +
   theme(axis.ticks = element_blank(),
         axis.text = element_blank(),
         panel.ontop = TRUE,
-        legend.position = "none",
         plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5),
-        panel.grid = element_line(color = "red" ),
-        panel.background = element_rect(fill = NA))
+        panel.grid = element_line(color = "black"),
+        panel.background = element_rect(fill = NA)) 
+
+
+g.Crater
+
 
 world_coordinates = map_data("world")
 ggplot() +
@@ -614,6 +600,4 @@ g.am_landing <- ggplot() +
         panel.grid = element_line(color = "black" ),
         panel.background = element_rect(fill = NA))
 
-g.am_landing
-
-                         
+g.am_landing             
