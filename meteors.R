@@ -501,7 +501,7 @@ ppunif(dataset_landing$reclat , col = "red" , col1 = "blue" , ref.line = TRUE)
 pp(dataset_landing$reclong , col = "red" , col1 = "blue" , ref.line = TRUE)
 pp(dataset_landing$reclat , col = "red" , col1 = "blue" , ref.line = TRUE)
 
-ataset_landing = na.omit(dataset_landing)
+dataset_landing = na.omit(dataset_landing)
 lq = cbind(circular(dataset_landing$reclat) , circular(dataset_landing$reclong))
 lq
 sum(is.na(lan))
