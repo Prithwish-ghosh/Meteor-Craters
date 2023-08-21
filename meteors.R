@@ -546,7 +546,8 @@ Landing = data.frame(Landing)
 
 world <- map_data("world")
 
-
+G_Asian_data <- Landing %>%
+  filter(longitude >= -65)
                          
 g.am_landing <- ggplot() +
   geom_map(data = world, map = world,
