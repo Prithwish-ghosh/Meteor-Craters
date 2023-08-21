@@ -546,8 +546,17 @@ Landing = data.frame(Landing)
 
 world <- map_data("world")
 
-G_Asian_data <- Landing %>%
-  filter(Landing$dataset_landing.reclong >= -65)
+library(dplyr)
+
+Landing_data_partitioned <- earthquake_data %>%
+  mutate(partition = case_when(
+    Landing$dataset_landing.reclat >= -65  ~ "Western Hemisphere",
+  ))
+
+earthquake_data_partitioned
+
+G_Asian_data <- Landing_data_partitioned %>%
+  filter(partition == "Western Hemisphere")
                          
 g.am_landing <- ggplot() +
   geom_map(data = world, map = world,
