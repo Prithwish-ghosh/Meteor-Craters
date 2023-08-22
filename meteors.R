@@ -551,6 +551,7 @@ library(dplyr)
 Landing_data_partitioned <- earthquake_data %>%
   mutate(partition = case_when(
     Landing$dataset_landing.reclat >= -65  ~ "Western Hemisphere",
+    Landing$dataset_landing.reclat < 90
   ))
 
 earthquake_data_partitioned
